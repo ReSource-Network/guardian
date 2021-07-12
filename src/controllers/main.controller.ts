@@ -23,7 +23,6 @@ import { Controller } from "./types";
 export const main: Controller = ({ prisma }) => {
   const r = Router();
 
-  // GET
   r.get("/", (_, res) => {
     return res.status(200).send("OK");
   });
@@ -73,7 +72,6 @@ export const main: Controller = ({ prisma }) => {
     }
   });
 
-  // POSTS
   r.post("/register", validateSchema(registerSchema), async (req, res) => {
     if (!(req as any).user)
       return res
@@ -91,7 +89,7 @@ export const main: Controller = ({ prisma }) => {
     if ((req as any).user !== userId) {
       return res.status(401).send({
         ERROR: true,
-        MESSAGE: "BAD REQUEST: TOKEN MUST MATCH USER ID",
+        MESSAGE: "BAD REQUEST: JWT TOKEN MUST MATCH USER ID",
       });
     }
 

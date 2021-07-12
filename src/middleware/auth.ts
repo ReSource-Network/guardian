@@ -19,7 +19,9 @@ export async function authenticate(
     (req as any).user = (decoded as Decoded).id;
     next();
   } else {
-    log.debug("Unauthenticated request");
+    log.debug(
+      "Unauthenticated request. PATH: " + req.path + " METHOD: " + req.method,
+    );
     return res.status(403).send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
   }
 }

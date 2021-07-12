@@ -5,9 +5,9 @@ export const registerSchema = yup
   .object()
   .shape({
     email: yup.string().required().email(),
-    multiSigAddress: yup.string().required(),
-    clientAddress: yup.string().required(),
     userId: yup.string().required(),
+    multiSigAddress: yup.string(),
+    clientAddress: yup.string(),
   })
   .required();
 

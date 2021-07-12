@@ -17,8 +17,9 @@ import {
   resetSchema,
   removeAndFetchSchema,
   updateSchema,
-} from "./schema";
+} from "../middleware/schema";
 import { Controller } from "./types";
+import { rejects } from "assert";
 
 export const main: Controller = ({ prisma }) => {
   const r = Router();
@@ -156,12 +157,19 @@ export const main: Controller = ({ prisma }) => {
       const resp: boolean = await sendTxEmail(payload as any);
 
       if (!resp) {
-        await retryAsyncUntilTruthy(
-          async () => {
-            return await sendTxEmail(payload as any);
-          },
-          { delay: 100, maxTry: 5 }
-        );
+        try {
+          await retryAsyncUntilTruthy(
+            async () => {
+              return await sendTxEmail(payload as any);
+            },
+            { delay: 100, maxTry: 5 },
+          );
+        } catch (e) {
+          return res.status(500).send({
+            ERROR: true,
+            MESSAGE: "INTERNAL SERVER ERROR: " + e.message,
+          });
+        }
       }
 
       return res.status(200).send({ sent: true });
@@ -200,7 +208,7 @@ export const main: Controller = ({ prisma }) => {
       if (!(await validateTotp(validateEmailToken))) {
         log.info(
           ("Invalid validateEmailToken for token: " +
-            userToUpdate.validateEmailToken) as string
+            userToUpdate.validateEmailToken) as string,
         );
 
         return res.status(401).send({

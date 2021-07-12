@@ -32,17 +32,4 @@ export function unless(middleware: any, ...paths: string[]) {
 
 export const auth = unless(authenticate, "/api/", "/api/recover", "/api/reset");
 
-export const validate = (schema) => async (req, res, next) => {
-  const body = req.body;
-  try {
-    await schema.validate(body);
-    next();
-  } catch (e) {
-    log.debug("Error validating request body schema:");
-    log.error(e.message);
 
-    return res
-      .status(400)
-      .json({ ERROR: true, MESSAGE: "SCHEMA VALIDATION ERROR: " + e.message });
-  }
-};

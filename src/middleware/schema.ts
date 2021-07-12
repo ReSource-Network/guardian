@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { log } from "../services/logger";
 
 export const registerSchema = yup
   .object()
@@ -40,3 +41,19 @@ export const updateSchema = yup
     data: yup.object().required(),
   })
   .required();
+
+export const validate = (schema) => async (req, res, next) => {
+  const body = req.body;
+
+  try {
+    await schema.validate(body);
+    next();
+  } catch (e) {
+    log.debug("Error validating request body schema:");
+    log.error(e.message);
+
+    return res
+      .status(400)
+      .json({ ERROR: true, MESSAGE: "SCHEMA VALIDATION ERROR: " + e.message });
+  }
+};

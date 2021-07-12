@@ -1,9 +1,8 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { log } from "./logger";
 
-export async function shortLink(path: string) {
-  const baseRedirect = "https://rsrc.co/";
-  const endpoint = baseRedirect + "api/url";
+export async function generateShortLink(path: string) {
+  const endpoint = "https://rsrc.co/api/create";
 
   const config: AxiosRequestConfig = {
     method: "POST",
@@ -12,22 +11,21 @@ export async function shortLink(path: string) {
       "Content-Type": "application/json",
     },
     data: {
-      url: path,
+      link: path,
     },
   };
 
   try {
     const {
-      data: {
-        data: { id },
-      },
+      data: { link },
     } = await axios(config);
 
-    if (id) return baseRedirect + id;
+    if (link) return link;
 
     return path;
   } catch (e) {
     log.debug("Error generating shortlink: " + e.message);
     log.error(e);
+    return null;
   }
 }

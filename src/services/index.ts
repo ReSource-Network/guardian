@@ -5,5 +5,5 @@ export {
   getGuardianAddr,
 } from "./wallet";
 export { log } from "./logger";
-export { shortLink } from "./link";
+export { generateShortLink } from "./link";
 export { sendTxEmail } from "./customerio";

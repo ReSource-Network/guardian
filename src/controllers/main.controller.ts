@@ -226,7 +226,7 @@ export const main: Controller = ({ prisma }) => {
 
       const { id } = userToUpdate;
 
-      if (!(await validateTotp(validateEmailToken))) {
+      if (validateEmailToken !== userToUpdate.validateEmailToken) {
         log.info(
           ("Invalid validateEmailToken for token: " +
             userToUpdate.validateEmailToken) as string,

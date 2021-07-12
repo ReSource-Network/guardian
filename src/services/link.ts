@@ -22,7 +22,6 @@ export async function generateShortLink(path: string) {
     } = await axios(config);
 
     if (link) return link;
-
     return path;
   } catch (e) {
     Sentry.captureException(e);

@@ -106,13 +106,11 @@ export const main: Controller = ({ prisma }) => {
           .send({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
       }
 
-      const validateEmailToken = await generate();
-
       const user = await prisma.user.create({
         data: {
           userId,
           email,
-          validateEmailToken,
+          validateEmailToken: null,
           multiSigAddress: multiSigAddress || null,
           clientAddress: clientAddress || null,
         },
@@ -162,8 +160,19 @@ export const main: Controller = ({ prisma }) => {
         });
       }
 
+      const otp = await generate();
+
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          validateEmailToken: otp,
+        },
+      });
+
       const payload = {
-        otp: user.validateEmailToken,
+        otp,
         to: user.email,
         id: user.userId,
       };

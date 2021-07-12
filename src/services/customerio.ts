@@ -14,16 +14,13 @@ export async function sendTxEmail(payload: {
 }): Promise<boolean> {
   try {
     const { to, otp, id } = payload;
-    const otpParam = "otp=" + otp;
-    const emailParam = "email=" + to;
-    const originParam = "origin=guardian";
-    const urlPath =
-      "http://localhost:3000/recover?" +
-      otpParam +
-      "&" +
-      emailParam +
-      "&" +
-      originParam;
+
+    const urlParamsToMap = { otp: otp, email: to, origin: "guardian" };
+    const params = Object.entries(urlParamsToMap)
+      .map((kv): string => kv.map(<any>encodeURIComponent).join("="))
+      .join("&");
+
+    const urlPath = "http://localhost:3000/recover?" + params;
 
     const link = await generateShortLink(urlPath);
 

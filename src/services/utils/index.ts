@@ -1,11 +1,9 @@
-import { ContractFunction, BigNumber } from "ethers";
-import { CeloProvider, CeloWallet } from "@celo-tools/celo-ethers-wrapper";
-import { Decimal } from "@prisma/client/runtime";
+import { BigNumber, ContractFunction } from "ethers";
 
 export const tryWithGas = async (
   func: ContractFunction,
   args: Array<any>,
-  gas: BigNumber
+  gas: BigNumber,
 ) => {
   let tries = 0;
   let confirmed = false;

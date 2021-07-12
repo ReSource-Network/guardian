@@ -19,14 +19,14 @@ describe("Guardian Test Suite", function () {
   const email = nanoid() + "@resourcenetwork.co";
   const jwt =
     "Bearer eyJhbGciOiJFZERTQSJ9.eyJpZCI6ImNrcXZ1bG9rNDAwMDJhb3NqMHhycms2ajUiLCJpYXQiOjE2MjU4MDU0NzUsImV4cCI6MTY1NjkwOTQ3NX0.byxffg0pTkw7t6Hl2PcjawITACCXMbSLJqs3oNotfmPJG7XYduvbLVsJQ-pplPGyc9dmiH3fPxzfReRVy-DuDQ";
-  
-    beforeAll(async function () {
+
+  beforeAll(async function () {
     //   init express app
     app = createServer(
       {
         prisma,
       },
-      controller
+      controller,
     );
 
     //   deploy multisig
@@ -42,7 +42,7 @@ describe("Guardian Test Suite", function () {
     multiSig = new ethers.Contract(
       multiSigAddress,
       MultiSigWallet__factory.createInterface(),
-      guardian
+      guardian,
     ) as MultiSigWallet;
 
     data = {
@@ -114,7 +114,6 @@ describe("Guardian Test Suite", function () {
         const {
           body: { user, tx },
         } = response;
-        console.log("main.test.ts -- response:", response);
         expect(tx).toBeTruthy();
         expect(user).toBeTruthy();
       })

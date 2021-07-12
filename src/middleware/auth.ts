@@ -6,7 +6,7 @@ import { Decoded, verify } from "./jwt";
 export async function authenticate(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const header = req.headers.authorization as string;
 
@@ -19,6 +19,7 @@ export async function authenticate(
     (req as any).user = (decoded as Decoded).id;
     next();
   } else {
+    log.debug("Unauthenticated request");
     return res.status(403).send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
   }
 }
@@ -31,5 +32,3 @@ export function unless(middleware: any, ...paths: string[]) {
 }
 
 export const auth = unless(authenticate, "/api/", "/api/recover", "/api/reset");
-
-

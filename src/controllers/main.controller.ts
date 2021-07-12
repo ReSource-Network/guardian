@@ -1,6 +1,6 @@
 import { User } from "@prisma/client";
 import { Router } from "express";
-import { retry, retryAsyncUntilTruthy } from "ts-retry";
+import { retryAsyncUntilTruthy } from "ts-retry";
 
 import { validate as validateSchema } from "../middleware";
 import {
@@ -19,7 +19,6 @@ import {
   updateSchema,
 } from "../middleware/schema";
 import { Controller } from "./types";
-import { rejects } from "assert";
 
 export const main: Controller = ({ prisma }) => {
   const r = Router();
@@ -41,6 +40,13 @@ export const main: Controller = ({ prisma }) => {
       return res.status(401).send({
         ERROR: true,
         MESSAGE: "NOT FOUND: PARAMS DATA AND USER ID REQUIRED",
+      });
+    }
+
+    if ((req as any).user !== userId) {
+      return res.status(401).send({
+        ERROR: true,
+        MESSAGE: "BAD REQUEST: TOKEN MUST MATCH USER ID",
       });
     }
 
@@ -75,11 +81,19 @@ export const main: Controller = ({ prisma }) => {
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
 
     const { userId, email, multiSigAddress, clientAddress } = req.body;
+
     if (!(userId && email))
       return res.status(401).send({
         ERROR: true,
         MESSAGE: "BAD REQUEST: PARAMS USER ID AND EMAIL REQUIRED",
       });
+
+    if ((req as any).user !== userId) {
+      return res.status(401).send({
+        ERROR: true,
+        MESSAGE: "BAD REQUEST: TOKEN MUST MATCH USER ID",
+      });
+    }
 
     try {
       const exists =
@@ -267,6 +281,13 @@ export const main: Controller = ({ prisma }) => {
       return res.status(401).send({
         ERROR: true,
         MESSAGE: "BAD REQUEST: PARAMS DATA AND USER ID REQUIRED",
+      });
+    }
+
+    if ((req as any).user !== userId) {
+      return res.status(401).send({
+        ERROR: true,
+        MESSAGE: "BAD REQUEST: TOKEN MUST MATCH USER ID",
       });
     }
 

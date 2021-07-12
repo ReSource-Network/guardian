@@ -12,7 +12,6 @@ export async function sendTxEmail(payload: {
   otp: string;
   id: string;
 }): Promise<boolean> {
-  console.log("customerio.ts -- reached");
   try {
     const { to, otp, id } = payload;
     const otpParam = "otp=" + otp;
@@ -29,7 +28,7 @@ export async function sendTxEmail(payload: {
     const link = await generateShortLink(urlPath);
 
     if (!link) throw new Error();
-    
+
     const request = new SendEmailRequest({
       to: payload.to,
       transactional_message_id: "13",

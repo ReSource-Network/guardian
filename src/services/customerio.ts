@@ -20,7 +20,8 @@ export async function sendTxEmail(payload: {
       .map((kv): string => kv.map(<any>encodeURIComponent).join("="))
       .join("&");
 
-    const urlPath = "http://localhost:3000/recover?" + params;
+    const urlPath = "https://staging.resourcenetwork.co/recover?" + params;
+    console.log("customerio.ts -- urlPath:", urlPath);
 
     const link = await generateShortLink(urlPath);
 

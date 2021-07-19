@@ -14,7 +14,10 @@ export async function authenticate(
     const token = header.replace("Bearer ", "");
 
     const decoded = await verify({ token });
-    if (!decoded) throw new Error();
+    if (!decoded)
+      return res
+        .status(403)
+        .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
 
     (req as any).user = (decoded as Decoded).id;
     next();

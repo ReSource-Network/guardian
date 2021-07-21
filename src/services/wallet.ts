@@ -45,14 +45,23 @@ export async function replaceMultiSigOwner({
 
     if (!multiSigAddress || !clientAddress)
       throw new Error(
-        "MultiSigAddress or ClientAddress fields do not exist on user"
+        "MultiSigAddress or ClientAddress fields do not exist on user",
       );
 
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,
       MultiSigWallet__factory.createInterface(),
-      guardianWallet
+      guardianWallet,
     ) as MultiSigWallet;
+
+    const owners = await multiSigWallet.getOwners();
+
+    if (owners.includes(clientAddress)) {
+      log.info("Error replacing multisig owner: " + user.email, {
+        id,
+        newClientAddress,
+      });
+    }
 
     // connect GuardianWallet and replace old clientAddress with new generated client address
     const data = (
@@ -74,13 +83,13 @@ export async function replaceMultiSigOwner({
           multiSigWallet.address,
           0,
           data,
-          guardianNonce
-        )
+          guardianNonce,
+        ),
     );
 
     // generate ownerA signature
     const guardianSig = ethers.utils.joinSignature(
-      await guardianWallet.signMessage(guardianHashToSign)
+      await guardianWallet.signMessage(guardianHashToSign),
     );
 
     const gas = await multiSigWallet.estimateGas.submitTransactionByRelay(
@@ -88,7 +97,7 @@ export async function replaceMultiSigOwner({
       0,
       data,
       guardianSig,
-      guardianWallet.address
+      guardianWallet.address,
     );
 
     const func = multiSigWallet.submitTransactionByRelay;
@@ -105,14 +114,14 @@ export async function replaceMultiSigOwner({
       async () => {
         return await (await tryWithGas(func, args, gas)).wait();
       },
-      { delay: 100, maxTry: 5 }
+      { delay: 100, maxTry: 5 },
     );
 
     const transactionId = ethers.utils.formatUnits(
       submitTxResponse.events?.find(
-        (e: any) => e.eventSignature == "Submission(uint256)"
+        (e: any) => e.eventSignature == "Submission(uint256)",
       )?.args?.transactionId,
-      "wei"
+      "wei",
     );
 
     if (!transactionId)

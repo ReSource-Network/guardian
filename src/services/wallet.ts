@@ -61,6 +61,7 @@ export async function replaceMultiSigOwner({
         id,
         newClientAddress,
       });
+      throw new Error("Cannot replace owner with existing owner");
     }
 
     // connect GuardianWallet and replace old clientAddress with new generated client address

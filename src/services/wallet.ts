@@ -56,7 +56,7 @@ export async function replaceMultiSigOwner({
 
     const owners = await multiSigWallet.getOwners();
 
-    if (owners.includes(clientAddress)) {
+    if (owners.includes(newClientAddress)) {
       log.info("Error replacing multisig owner: " + user.email, {
         id,
         newClientAddress,

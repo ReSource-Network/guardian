@@ -1,4 +1,8 @@
-import { BigNumber, ContractFunction } from "ethers";
+import { BigNumber, ContractFunction, ethers } from "ethers";
+import { getCeloProvider, getGuardianWallet } from "../wallet";
+import { MultiSigWallet__factory } from "../../types";
+import { MultiSigWallet } from "../../types/MultiSigWallet";
+import config from "../../config";
 
 export const tryWithGas = async (
   func: ContractFunction,
@@ -24,4 +28,26 @@ export const tryWithGas = async (
         throw e;
     }
   }
+};
+
+export const getClientAddress = async (
+  multiSigAddress: string,
+): Promise<string> => {
+  const guardian = await getGuardianWallet();
+  const multiSigContract = new ethers.Contract(
+    multiSigAddress,
+    MultiSigWallet__factory.createInterface(),
+    guardian,
+  ) as MultiSigWallet;
+
+  const owners = await multiSigContract.getOwners();
+
+  // const offset = [config.COSIGN_WALLET_ADDRESS, guardian.address];
+  const offset = [
+    "0x846b280F1e3CAE36Fa83A9036EEDD4b28C422bDf", // TODO: get coSigner Address in config
+    guardian.address,
+  ];
+
+  const client = owners.filter((owner) => !offset.includes(owner))[0];
+  return client || "";
 };

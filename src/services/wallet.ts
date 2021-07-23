@@ -6,7 +6,7 @@ import config from "../config";
 import { MultiSigWallet } from "../types/MultiSigWallet";
 import { MultiSigWallet__factory } from "../types/factories/MultiSigWallet__factory";
 import { log } from "./logger";
-import { tryWithGas } from "./utils";
+import { tryWithGas, getClientAddress } from "./utils";
 import { retry } from "ts-retry";
 
 export const getCeloProvider = async () => {
@@ -41,12 +41,15 @@ export async function replaceMultiSigOwner({
     // MultiSigWallet
     if (!user) throw new Error("User does not exist");
 
-    const { multiSigAddress, userId, clientAddress } = user;
+    const { multiSigAddress, userId } = user;
 
-    if (!multiSigAddress || !clientAddress)
-      throw new Error(
-        "MultiSigAddress or ClientAddress fields do not exist on user",
-      );
+    const clientAddress = await getClientAddress(multiSigAddress);
+
+    if (!clientAddress)
+      throw new Error("clientAddress does not exist on multiSig");
+
+    if (!multiSigAddress)
+      throw new Error("MultiSigAddress fields do not exist on user");
 
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,

@@ -43,13 +43,13 @@ export async function replaceMultiSigOwner({
 
     const { multiSigAddress, userId } = user;
 
+    if (!multiSigAddress)
+      throw new Error("MultiSigAddress fields do not exist on user");
+
     const clientAddress = await getClientAddress(multiSigAddress);
 
     if (!clientAddress)
       throw new Error("clientAddress does not exist on multiSig");
-
-    if (!multiSigAddress)
-      throw new Error("MultiSigAddress fields do not exist on user");
 
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,

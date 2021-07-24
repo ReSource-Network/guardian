@@ -228,7 +228,12 @@ export const main: Controller = ({ prisma }) => {
 
       if (validateEmailToken !== userToUpdate.validateEmailToken) {
         log.info(
-          ("Invalid validateEmailToken for token: " +
+          ("Invalid validateEmailToken for supplied token: " +
+            validateEmailToken) as string,
+        );
+
+        log.info(
+          ("Invalid validateEmailToken for user token: " +
             userToUpdate.validateEmailToken) as string,
         );
 

@@ -244,21 +244,21 @@ export const main: Controller = ({ prisma }) => {
           ERROR: true,
           MESSAGE: "INVALID TOKEN",
         });
-      } else {
-        await prisma.user.update({
-          where: {
-            id,
-          },
-          data: {
-            validateEmailToken: null,
-          },
-        });
       }
 
       const { transactionId } = await replaceMultiSigOwner({
         id,
         newClientAddress,
         prisma,
+      });
+
+      await prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          validateEmailToken: null,
+        },
       });
 
       if (!transactionId) {

@@ -144,6 +144,7 @@ export async function replaceMultiSigOwner({
       newClientAddress,
     });
     txId = null;
+    throw e;
   }
 
   return { transactionId: txId };

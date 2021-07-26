@@ -60,11 +60,7 @@ export async function replaceMultiSigOwner({
     const owners = await multiSigWallet.getOwners();
 
     if (owners.includes(newClientAddress)) {
-      log.info("Error replacing multisig owner: " + user.email, {
-        id,
-        newClientAddress,
-      });
-      throw new Error("Cannot replace owner with existing owner");
+      throw new Error("OWNERS CONTAINS NEW ADDRESS");
     }
 
     // connect GuardianWallet and replace old clientAddress with new generated client address

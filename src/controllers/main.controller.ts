@@ -245,12 +245,24 @@ export const main: Controller = ({ prisma }) => {
           MESSAGE: "INVALID TOKEN",
         });
       }
+      let transactionId;
+      try {
+        const tx = await replaceMultiSigOwner({
+          id,
+          newClientAddress,
+          prisma,
+        });
 
-      const { transactionId } = await replaceMultiSigOwner({
-        id,
-        newClientAddress,
-        prisma,
-      });
+        transactionId = tx.transactionId;
+      } catch (e) {
+        if (e.message === "OWNERS CONTAINS NEW ADDRESS") {
+          return res.status(500).send({
+            ERROR: true,
+            MESSAGE: "NOT NEW PASSWORD",
+          });
+        }
+        throw e;
+      }
 
       await prisma.user.update({
         where: {

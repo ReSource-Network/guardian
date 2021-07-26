@@ -256,7 +256,7 @@ export const main: Controller = ({ prisma }) => {
         transactionId = tx.transactionId;
       } catch (e) {
         if (e.message === "OWNERS CONTAINS NEW ADDRESS") {
-          return res.status(400).send({
+          return res.status(200).json({
             ERROR: true,
             MESSAGE: "NOT NEW PASSWORD",
           });

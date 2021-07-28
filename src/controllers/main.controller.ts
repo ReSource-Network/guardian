@@ -100,8 +100,8 @@ export const main: Controller = ({ prisma }) => {
 
       if (exists) {
         return res
-          .status(400)
-          .send({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
+          .status(200)
+          .json({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
       }
 
       const user = await prisma.user.create({

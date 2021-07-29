@@ -39,3 +39,4 @@ yarn-error.log*
 ./remove_images.sh
 ./remove_containers.sh
 *.log
+*.production

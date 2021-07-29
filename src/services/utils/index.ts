@@ -42,11 +42,7 @@ export const getClientAddress = async (
 
   const owners = await multiSigContract.getOwners();
 
-  // const offset = [config.COSIGN_WALLET_ADDRESS, guardian.address];
-  const offset = [
-    "0x846b280F1e3CAE36Fa83A9036EEDD4b28C422bDf", // TODO: get coSigner Address in config
-    guardian.address,
-  ];
+  const offset = [config.COSIGN_WALLET_ADDRESS, guardian.address];
 
   const client = owners.filter((owner) => !offset.includes(owner))[0];
   return client || "";

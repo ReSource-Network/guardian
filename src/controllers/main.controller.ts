@@ -207,7 +207,6 @@ export const main: Controller = ({ prisma }) => {
 
   r.post("/recover", validateSchema(recoverSchema), async (req, res) => {
     const { validateEmailToken, email, newClientAddress } = req.body;
-    console.log("BODY: ", validateEmailToken, email, newClientAddress);
 
     try {
       const userToUpdate: User | null = await prisma.user.findUnique({
@@ -215,8 +214,6 @@ export const main: Controller = ({ prisma }) => {
           email,
         },
       });
-
-      console.log("USER: ", userToUpdate);
 
       if (!userToUpdate) {
         log.info("Error: Could not find user with email: " + email);
@@ -230,16 +227,6 @@ export const main: Controller = ({ prisma }) => {
       const { id } = userToUpdate;
 
       if (validateEmailToken !== userToUpdate.validateEmailToken) {
-        console.log(
-          ("Invalid validateEmailToken for supplied token: " +
-            validateEmailToken) as string,
-        );
-
-        console.log(
-          ("Invalid validateEmailToken for user token: " +
-            userToUpdate.validateEmailToken) as string,
-        );
-
         return res.status(401).send({
           ERROR: true,
           MESSAGE: "INVALID TOKEN",

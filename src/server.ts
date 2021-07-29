@@ -21,7 +21,7 @@ export const createServer = (
     res.set("Access-Control-Allow-Origin", "*");
     res.set(
       "Access-Control-Allow-Methods",
-      "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+      "GET, POST, OPTIONS, PUT, PATCH, DELETE",
     );
     res.set("Access-Control-Allow-Headers", "X-Requested-With,content-type");
 

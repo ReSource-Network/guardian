@@ -4,7 +4,6 @@ import * as Sentry from "@sentry/node";
 import { log } from "./logger";
 import config, { isProd } from "../config";
 import { generateShortLink } from "./link";
-import { isProd } from "../config";
 
 const customerio = new APIClient(config.CUSTOMERIO_APP_API_KEY);
 

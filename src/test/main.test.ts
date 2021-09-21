@@ -6,14 +6,14 @@ import request from "supertest";
 import { main as controller } from "../controllers/main.controller";
 import { createServer } from "../server";
 import { getGuardianWallet } from "../services/wallet";
-import { MultiSigWallet__factory } from "../types/factories/MultiSigWallet__factory";
-import { MultiSigWallet } from "../types/MultiSigWallet";
+import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
+import { IKeyMultiSig } from "../types/IKeyMultiSig";
 
 const prisma = new PrismaClient();
 const nanoid = customAlphabet("1234567890abcdef", 10);
 
 describe("Guardian Test Suite", function () {
-  let multiSig, guardian, addresses, data, app;
+  let multiSig: IKeyMultiSig, guardian, addresses, data, app;
   const newClient = "0x7a7cE72c9c0410113e7C2608c584Ea05e683F4f5";
   const oldClient = "0xAbeB77559A15F520A9e79982ACd6Cf8951b94949";
   const email = nanoid() + "@resourcenetwork.co";
@@ -33,17 +33,26 @@ describe("Guardian Test Suite", function () {
     guardian = await getGuardianWallet();
     addresses = [guardian.address, oldClient];
 
-    const walletFactory = new MultiSigWallet__factory(guardian);
+    const walletFactory = new IKeyMultiSig__factory(guardian);
     const deployResult = await (
-      await walletFactory.deploy(addresses, 2)
+      await walletFactory.deploy()
     ).deployTransaction.wait();
 
     const multiSigAddress = deployResult.contractAddress;
     multiSig = new ethers.Contract(
       multiSigAddress,
-      MultiSigWallet__factory.createInterface(),
+      IKeyMultiSig__factory.createInterface(),
       guardian,
-    ) as MultiSigWallet;
+    ) as IKeyMultiSig;
+
+    await (
+      await multiSig.initialize(
+        [oldClient],
+        [guardian.address],
+        ethers.Wallet.createRandom().address,
+        2,
+      )
+    ).wait();
 
     data = {
       userId: nanoid(),

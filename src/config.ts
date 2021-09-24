@@ -9,7 +9,7 @@ export function isProd() {
 }
 
 const getPKFromMnemonic = (): string => {
-  const filePath = `./../mnemonic.txt`;
+  const filePath = "./../mnemonic.txt";
   const mnemonic = fs
     .readFileSync(path.join(__dirname, filePath))
     .toString()

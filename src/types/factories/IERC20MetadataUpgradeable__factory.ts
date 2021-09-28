@@ -4,7 +4,10 @@
 
 import { Contract, Signer, utils } from "ethers";
 import { Provider } from "@ethersproject/providers";
-import type { IERC20MetadataUpgradeable, IERC20MetadataUpgradeableInterface } from "../IERC20MetadataUpgradeable";
+import type {
+  IERC20MetadataUpgradeable,
+  IERC20MetadataUpgradeableInterface,
+} from "../IERC20MetadataUpgradeable";
 
 const _abi = [
   {
@@ -236,7 +239,14 @@ export class IERC20MetadataUpgradeable__factory {
   static createInterface(): IERC20MetadataUpgradeableInterface {
     return new utils.Interface(_abi) as IERC20MetadataUpgradeableInterface;
   }
-  static connect(address: string, signerOrProvider: Signer | Provider): IERC20MetadataUpgradeable {
-    return new Contract(address, _abi, signerOrProvider) as IERC20MetadataUpgradeable;
+  static connect(
+    address: string,
+    signerOrProvider: Signer | Provider
+  ): IERC20MetadataUpgradeable {
+    return new Contract(
+      address,
+      _abi,
+      signerOrProvider
+    ) as IERC20MetadataUpgradeable;
   }
 }

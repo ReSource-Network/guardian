@@ -13,7 +13,6 @@ export function fetchConfig() {
     JWT_SECRET: process.env.JWT_SECRET!,
     TOTP_SECRET: process.env.TOTP_SECRET!,
     GUARDIAN_WALLET_PK: process.env.GUARDIAN_PK!,
-    COSIGN_WALLET_ADDRESS: process.env.COSIGNER_WALLET_ADDR!,
     BLOCKCHAIN_NETWORK: process.env.BLOCKCHAIN_NETWORK!,
     SENTRY_DSN: process.env.SENTRY_DSN!,
     CUSTOMERIO_SITE_ID: process.env.CUSTOMERIO_SITE_ID!,

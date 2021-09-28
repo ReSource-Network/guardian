@@ -1,24 +1,25 @@
-import { CeloProvider, CeloWallet } from "@celo-tools/celo-ethers-wrapper";
 import { PrismaClient } from "@prisma/client";
 import { ethers } from "ethers";
 
 import config from "../config";
-import { MultiSigWallet } from "../types/MultiSigWallet";
-import { MultiSigWallet__factory } from "../types/factories/MultiSigWallet__factory";
 import { log } from "./logger";
-import { tryWithGas, getClientAddress } from "./utils";
+import { tryWithGas } from "./utils";
 import { retry } from "ts-retry";
+import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
+import { IKeyMultiSig } from "../types/IKeyMultiSig";
 
-export const getCeloProvider = async () => {
-  const provider = new CeloProvider(config.BLOCKCHAIN_NETWORK);
+export const getProvider = async () => {
+  let provider = new ethers.providers.JsonRpcProvider(
+    config.BLOCKCHAIN_NETWORK,
+  );
   await provider.ready;
   return provider;
 };
 
 export const getGuardianWallet = async () => {
-  const provider = await getCeloProvider();
+  const provider = await getProvider();
   const pk = config.GUARDIAN_WALLET_PK;
-  return new CeloWallet(pk, provider);
+  return new ethers.Wallet(pk, provider);
 };
 
 export async function replaceMultiSigOwner({
@@ -41,33 +42,33 @@ export async function replaceMultiSigOwner({
     // MultiSigWallet
     if (!user) throw new Error("User does not exist");
 
-    const { multiSigAddress, userId } = user;
+    const { multiSigAddress, userId, clientAddress } = user;
 
     if (!multiSigAddress)
       throw new Error("MultiSigAddress fields do not exist on user");
-
-    const clientAddress = await getClientAddress(multiSigAddress);
 
     if (!clientAddress)
       throw new Error("clientAddress does not exist on multiSig");
 
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,
-      MultiSigWallet__factory.createInterface(),
+      IKeyMultiSig__factory.createInterface(),
       guardianWallet,
-    ) as MultiSigWallet;
+    ) as IKeyMultiSig;
 
     const owners = await multiSigWallet.getOwners();
 
     if (owners.includes(newClientAddress)) {
       throw new Error("OWNERS CONTAINS NEW ADDRESS");
     }
+    if (!owners.includes(guardianWallet.address))
+      throw new Error("Guardian wallet is not an owner");
 
     // connect GuardianWallet and replace old clientAddress with new generated client address
     const data = (
       await multiSigWallet
         .connect(guardianWallet)
-        .populateTransaction.replaceOwner(clientAddress, newClientAddress)
+        .populateTransaction.replaceClient(clientAddress, newClientAddress)
     ).data;
 
     if (!data) throw new Error("Cannot populate replaceOwner tx with owner A");
@@ -99,6 +100,7 @@ export async function replaceMultiSigOwner({
       guardianSig,
       guardianWallet.address,
     );
+    console.log(gas);
 
     const func = multiSigWallet.submitTransactionByRelay;
 

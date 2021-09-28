@@ -31,6 +31,8 @@ export function fetchConfig() {
     CUSTOMERIO_API_KEY: process.env.CUSTOMERIO_API_KEY!,
     CUSTOMERIO_APP_API_KEY: process.env.CUSTOMERIO_APP_API_KEY!,
     JWT: process.env.JWT!,
+    CLIENT_URL: process.env.CLIENT_URL!,
+    ADMIN_SECRET: process.env.ADMIN_SECRET!,
   };
 }
 

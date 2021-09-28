@@ -12,12 +12,17 @@ export async function authenticate(
 
   if (header) {
     const token = header.replace("Bearer ", "");
-
     const decoded = await verify({ token });
+
     if (!decoded)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
+
+    if (decoded.admin) {
+      (req as any).admin = true;
+      return next();
+    }
 
     (req as any).user = (decoded as Decoded).id;
     next();

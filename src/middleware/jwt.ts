@@ -15,10 +15,13 @@ export async function verify({ token }): Promise<Decoded | null> {
 
   try {
     const {
-      payload: { id, exp },
+      payload: { id, exp, secret },
     } = await jwtVerify(token, key);
 
-    if (!id || !exp) return null;
+    if (!exp) return null;
+
+    if (secret && secret === config.ADMIN_SECRET)
+      return (decoded = { id: <string>id, admin: <string>secret, exp });
 
     decoded = { exp, id: <string>id };
   } catch (e) {
@@ -32,6 +35,7 @@ export async function verify({ token }): Promise<Decoded | null> {
 }
 
 export interface Decoded {
-  id: string;
-  exp: number;
+  id?: string;
+  exp?: number;
+  admin?: string;
 }

@@ -55,16 +55,14 @@ export async function replaceMultiSigOwner({
       guardianWallet,
     ) as IKeyMultiSig;
 
-    const owners = await multiSigWallet.getOwners();
-
-    if (owners.includes(newClientAddress)) {
+    if (await multiSigWallet.clients(newClientAddress)) {
       log.info("Error replacing multisig owner: " + user.email, {
         id,
         newClientAddress,
       });
       throw new Error("Cannot replace owner with existing owner");
     }
-    if (!owners.includes(guardianWallet.address))
+    if (!(await multiSigWallet.guardians(guardianWallet.address)))
       throw new Error("Guardian wallet is not an owner");
 
     // connect GuardianWallet and replace old clientAddress with new generated client address
@@ -74,7 +72,7 @@ export async function replaceMultiSigOwner({
         .populateTransaction.replaceClient(clientAddress, newClientAddress)
     ).data;
 
-    if (!data) throw new Error("Cannot populate replaceOwner tx with owner A");
+    if (!data) throw new Error("Error replacing client");
 
     // get multiSig owner tx nonce
     const guardianNonce = await multiSigWallet.nonces(guardianWallet.address);
@@ -103,7 +101,6 @@ export async function replaceMultiSigOwner({
       guardianSig,
       guardianWallet.address,
     );
-    console.log(gas);
 
     const func = multiSigWallet.submitTransactionByRelay;
 
@@ -129,8 +126,7 @@ export async function replaceMultiSigOwner({
       "wei",
     );
 
-    if (!transactionId)
-      throw new Error("TransactionID invalid, try again bitch");
+    if (!transactionId) throw new Error("Unable to submit transaction");
 
     // update new clientAddress on user
     await prisma.user.update({

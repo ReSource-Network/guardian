@@ -100,8 +100,8 @@ export const main: Controller = ({ prisma }) => {
 
       if (exists) {
         return res
-          .status(400)
-          .send({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
+          .status(200)
+          .json({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
       }
 
       const user = await prisma.user.create({
@@ -227,30 +227,37 @@ export const main: Controller = ({ prisma }) => {
       const { id } = userToUpdate;
 
       if (validateEmailToken !== userToUpdate.validateEmailToken) {
-        log.info(
-          ("Invalid validateEmailToken for token: " +
-            userToUpdate.validateEmailToken) as string,
-        );
-
         return res.status(401).send({
           ERROR: true,
           MESSAGE: "INVALID TOKEN",
         });
-      } else {
-        await prisma.user.update({
-          where: {
-            id,
-          },
-          data: {
-            validateEmailToken: null,
-          },
+      }
+      let transactionId;
+      try {
+        const tx = await replaceMultiSigOwner({
+          id,
+          newClientAddress,
+          prisma,
         });
+
+        transactionId = tx.transactionId;
+      } catch (e) {
+        if (e.message === "OWNERS CONTAINS NEW ADDRESS") {
+          return res.status(200).json({
+            ERROR: true,
+            MESSAGE: "NOT NEW PASSWORD",
+          });
+        }
+        throw e;
       }
 
-      const { transactionId } = await replaceMultiSigOwner({
-        id,
-        newClientAddress,
-        prisma,
+      await prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          validateEmailToken: null,
+        },
       });
 
       if (!transactionId) {

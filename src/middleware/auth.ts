@@ -23,7 +23,7 @@ export async function authenticate(
     next();
   } else {
     log.debug(
-      "Unauthenticated request. PATH: " + req.path + " METHOD: " + req.method,
+      "Unauthenticated request. PATH: " + req.path + " | METHOD: " + req.method,
     );
     return res.status(403).send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
   }

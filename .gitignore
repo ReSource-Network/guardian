@@ -15,7 +15,6 @@ cache/
 artifacts/
 typechain/
 src/services/ledger/types/
-mnemonic.txt
 
 # production
 /dist

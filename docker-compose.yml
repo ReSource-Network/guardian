@@ -7,7 +7,7 @@ services:
     ports:
       - "127.0.0.1:5434:5432"
     environment:
-      - "POSTGRES_PASSWORD=resource"
+      - "POSTGRES_PASSWORD=f6dd59e17a41"
       - "POSTGRES_USER=resource"
     volumes:
       - pg_data:/var/lib/postgresql/data

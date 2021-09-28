@@ -1,4 +1,8 @@
-import { BigNumber, ContractFunction } from "ethers";
+import { BigNumber, ContractFunction, ethers } from "ethers";
+import { getGuardianWallet } from "../wallet";
+import { MultiSigWallet__factory } from "../../types";
+import { MultiSigWallet } from "../../types/MultiSigWallet";
+import config from "../../config";
 
 export const tryWithGas = async (
   func: ContractFunction,

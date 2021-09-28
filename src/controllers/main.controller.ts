@@ -255,31 +255,38 @@ export const main: Controller = ({ prisma }) => {
 
       const { id, validateEmailToken: validEmailToken } = userToUpdate;
 
-      if (validateEmailToken !== validEmailToken) {
-        log.info(
-          ("Invalid validateEmailToken for token: " +
-            userToUpdate.validateEmailToken) as string,
-        );
-
+      if (validateEmailToken !== userToUpdate.validateEmailToken) {
         return res.status(401).send({
           ERROR: true,
           MESSAGE: "INVALID VALIDATE EMAIL TOKEN",
         });
-      } else {
-        await prisma.user.update({
-          where: {
-            id,
-          },
-          data: {
-            validateEmailToken: null,
-          },
+      }
+      let transactionId;
+      try {
+        const tx = await replaceMultiSigOwner({
+          id,
+          newClientAddress,
+          prisma,
         });
+
+        transactionId = tx.transactionId;
+      } catch (e) {
+        if (e.message === "OWNERS CONTAINS NEW ADDRESS") {
+          return res.status(200).json({
+            ERROR: true,
+            MESSAGE: "NOT NEW PASSWORD",
+          });
+        }
+        throw e;
       }
 
-      const { transactionId } = await replaceMultiSigOwner({
-        id,
-        newClientAddress,
-        prisma,
+      await prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          validateEmailToken: null,
+        },
       });
 
       if (!transactionId) {

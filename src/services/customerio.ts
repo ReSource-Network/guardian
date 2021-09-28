@@ -25,8 +25,7 @@ export async function sendCustomerioResetEmail(payload: {
       .map((kv): string => kv.map(<any>encodeURIComponent).join("="))
       .join("&");
 
-    const urlPath = "https://staging.resourcenetwork.co/recover?" + params;
-    console.log("customerio.ts -- urlPath:", urlPath);
+    const urlPath = config.CLIENT_URL + params;
 
     let link = await generateShortLink(urlPath);
 

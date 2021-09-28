@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { ethers } from "ethers";
-
+import { ethers, providers } from "ethers";
+import { CeloProvider, CeloWallet } from "@celo-tools/celo-ethers-wrapper";
 import config from "../config";
 import { log } from "./logger";
 import { tryWithGas } from "./utils";
@@ -8,10 +8,14 @@ import { retry } from "ts-retry";
 import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
 import { IKeyMultiSig } from "../types/IKeyMultiSig";
 
-export const getProvider = async () => {
-  let provider = new ethers.providers.JsonRpcProvider(
-    config.BLOCKCHAIN_NETWORK,
-  );
+export const getProvider = async (): Promise<providers.JsonRpcProvider> => {
+  const network = config.BLOCKCHAIN_NETWORK;
+  let provider;
+  if (network.includes("celo")) {
+    provider = new CeloProvider(network);
+  } else {
+    provider = new ethers.providers.JsonRpcProvider(network);
+  }
   await provider.ready;
   return provider;
 };
@@ -44,10 +48,11 @@ export async function replaceMultiSigOwner({
 
     const { multiSigAddress, userId, clientAddress } = user;
 
-    if (!multiSigAddress || !clientAddress)
-      throw new Error(
-        "MultiSigAddress or ClientAddress fields do not exist on user",
-      );
+    if (!multiSigAddress)
+      throw new Error("MultiSigAddress fields do not exist on user");
+
+    if (!clientAddress)
+      throw new Error("clientAddress does not exist on multiSig");
 
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,
@@ -141,6 +146,7 @@ export async function replaceMultiSigOwner({
       newClientAddress,
     });
     txId = null;
+    throw e;
   }
 
   return { transactionId: txId };

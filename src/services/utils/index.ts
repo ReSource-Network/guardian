@@ -1,5 +1,5 @@
 import { BigNumber, ContractFunction, ethers } from "ethers";
-import { getCeloProvider, getGuardianWallet } from "../wallet";
+import { getGuardianWallet } from "../wallet";
 import { MultiSigWallet__factory } from "../../types";
 import { MultiSigWallet } from "../../types/MultiSigWallet";
 import config from "../../config";
@@ -28,22 +28,4 @@ export const tryWithGas = async (
         throw e;
     }
   }
-};
-
-export const getClientAddress = async (
-  multiSigAddress: string,
-): Promise<string> => {
-  const guardian = await getGuardianWallet();
-  const multiSigContract = new ethers.Contract(
-    multiSigAddress,
-    MultiSigWallet__factory.createInterface(),
-    guardian,
-  ) as MultiSigWallet;
-
-  const owners = await multiSigContract.getOwners();
-
-  const offset = [config.COSIGN_WALLET_ADDRESS, guardian.address];
-
-  const client = owners.filter((owner) => !offset.includes(owner))[0];
-  return client || "";
 };

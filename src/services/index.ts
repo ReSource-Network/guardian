@@ -1,4 +1,4 @@
-export { generate, validate } from "./totp";
+export { generate } from "./totp";
 export {
   replaceMultiSigOwner,
   getGuardianWallet,
@@ -6,4 +6,4 @@ export {
 } from "./wallet";
 export { log } from "./logger";
 export { generateShortLink } from "./link";
-export { sendTxEmail } from "./customerio";
+export { sendCustomerioResetEmail } from "./customerio";

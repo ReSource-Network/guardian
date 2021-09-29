@@ -6,8 +6,8 @@ export const registerSchema = yup
   .shape({
     email: yup.string().required().email(),
     userId: yup.string().required(),
-    multiSigAddress: yup.string(),
-    clientAddress: yup.string(),
+    multiSigAddress: yup.string().required(),
+    clientAddress: yup.string().required(),
   })
   .required();
 
@@ -39,6 +39,13 @@ export const updateSchema = yup
   .shape({
     userId: yup.string().required(),
     data: yup.object().required(),
+  })
+  .required();
+
+export const migrateBatchSchema = yup
+  .object()
+  .shape({
+    data: yup.array().required(),
   })
   .required();
 

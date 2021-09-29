@@ -1,24 +1,26 @@
-import { User } from "@prisma/client";
+import { User, PrismaClient, Prisma } from "@prisma/client";
 import { Router } from "express";
-import { retryAsyncUntilTruthy } from "ts-retry";
+import { retry, retryAsyncUntilTruthy } from "ts-retry";
+import PromisePool from "@supercharge/promise-pool";
 
-import { validate as validateSchema } from "../middleware";
 import {
   generate,
-  validate as validateTotp,
   log,
   replaceMultiSigOwner,
   getGuardianAddr,
-  sendTxEmail,
+  sendCustomerioResetEmail,
 } from "../services";
 import {
   recoverSchema,
   registerSchema,
   resetSchema,
   removeAndFetchSchema,
+  migrateBatchSchema,
   updateSchema,
 } from "../middleware/schema";
 import { Controller } from "./types";
+import * as yup from "yup";
+import { validate as validateSchema } from "../middleware/schema";
 
 export const main: Controller = ({ prisma }) => {
   const r = Router();
@@ -28,7 +30,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.get("/user", validateSchema(removeAndFetchSchema), async (req, res) => {
-    if (!(req as any).user)
+    if (!(req as any).user || !(req as any).admin)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
@@ -73,17 +75,18 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/register", validateSchema(registerSchema), async (req, res) => {
-    if (!(req as any).user)
+    if (!(req as any).user || !(req as any).admin)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
 
     const { userId, email, multiSigAddress, clientAddress } = req.body;
 
-    if (!(userId && email))
+    if (!(userId && email && multiSigAddress && clientAddress))
       return res.status(401).send({
         ERROR: true,
-        MESSAGE: "BAD REQUEST: PARAMS USER ID AND EMAIL REQUIRED",
+        MESSAGE:
+          "BAD REQUEST: PARAMS USERID && EMAIL && MULTISIGADDRESS && CLIENTADDRESS REQUIRED",
       });
 
     if ((req as any).user !== userId) {
@@ -94,31 +97,51 @@ export const main: Controller = ({ prisma }) => {
     }
 
     try {
-      const exists =
-        (await prisma.user.count({ where: { userId } })) ||
-        (await prisma.user.count({ where: { email } }));
-
-      if (exists) {
-        return res
-          .status(200)
-          .json({ ERROR: true, MESSAGE: "USER WITH EMAIL OR USERID EXISTS" });
-      }
-
-      const user = await prisma.user.create({
-        data: {
+      const user = await prisma.user.upsert({
+        where: {
+          userId,
+        },
+        update: {
+          multiSigAddress,
+          clientAddress,
+        },
+        create: {
           userId,
           email,
+          multiSigAddress,
+          clientAddress,
           validateEmailToken: null,
-          multiSigAddress: multiSigAddress || null,
-          clientAddress: clientAddress || null,
         },
       });
 
       if (!user) {
-        return res.status(500).send({
-          ERROR: true,
-          MESSAGE: "INTERNAL SERVER ERROR: COULD NOT CREATE USER",
-        });
+        try {
+          await retryAsyncUntilTruthy(
+            async () =>
+              await prisma.user.upsert({
+                where: {
+                  userId,
+                },
+                update: {
+                  multiSigAddress,
+                  clientAddress,
+                },
+                create: {
+                  userId,
+                  email,
+                  validateEmailToken: null,
+                  multiSigAddress: multiSigAddress,
+                  clientAddress: clientAddress,
+                },
+              }),
+            { delay: 100, maxTry: 3 },
+          );
+        } catch (e) {
+          return res.status(500).send({
+            ERROR: true,
+            MESSAGE: "INTERNAL SERVER ERROR: COULD NOT CREATE USER",
+          });
+        }
       }
 
       const guardian = await getGuardianAddr();
@@ -139,7 +162,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/reset", validateSchema(resetSchema), async (req, res) => {
-    const { email } = req.body;
+    const { email, redirectUrl } = req.body;
 
     if (!email) {
       return res.status(401).send({
@@ -158,42 +181,57 @@ export const main: Controller = ({ prisma }) => {
         });
       }
 
-      const otp = await generate();
+      if (!user.validateEmailToken) {
+        const validateEmailToken = await generate();
 
-      await prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          validateEmailToken: otp,
-        },
-      });
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            validateEmailToken,
+          },
+        });
 
-      const payload = {
-        otp,
-        to: user.email,
-        id: user.userId,
-      };
+        const payload = {
+          oneTimePass: validateEmailToken,
+          recipient: user.email,
+          recipientId: user.userId,
+          redirectUrl: redirectUrl,
+        };
 
-      const resp: boolean = await sendTxEmail(payload as any);
+        const sent = await sendCustomerioResetEmail(payload);
 
-      if (!resp) {
-        try {
-          await retryAsyncUntilTruthy(
-            async () => {
-              return await sendTxEmail(payload as any);
-            },
-            { delay: 100, maxTry: 5 },
-          );
-        } catch (e) {
+        console.log("main.controller.ts -- sent:", sent);
+
+        if (!sent)
           return res.status(500).send({
             ERROR: true,
-            MESSAGE: "INTERNAL SERVER ERROR: " + e.message,
+            MESSAGE:
+              "INTERNAL SERVER ERROR: FAILED TO SEND RESET PASSWORD EMAIL",
           });
-        }
-      }
 
-      return res.status(200).send({ sent: true });
+        return res.status(200).send({ sent: true });
+      } else {
+        const payload = {
+          oneTimePass: user.validateEmailToken,
+          recipient: user.email,
+          recipientId: user.userId,
+          redirectUrl: redirectUrl,
+        };
+
+        const sent = await sendCustomerioResetEmail(payload);
+        console.log("main.controller.ts -- sent:", sent);
+
+        if (!sent)
+          return res.status(500).send({
+            ERROR: true,
+            MESSAGE:
+              "INTERNAL SERVER ERROR: FAILED TO SEND RESET PASSWORD EMAIL",
+          });
+
+        return res.status(200).send({ sent: true });
+      }
     } catch (e) {
       log.debug("Error sending TOTP password:");
       log.error(e);
@@ -206,7 +244,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/recover", validateSchema(recoverSchema), async (req, res) => {
-    const { validateEmailToken, email, newClientAddress } = req.body;
+    const { email, validateEmailToken, newClientAddress } = req.body;
 
     try {
       const userToUpdate: User | null = await prisma.user.findUnique({
@@ -224,15 +262,17 @@ export const main: Controller = ({ prisma }) => {
         });
       }
 
-      const { id } = userToUpdate;
+      const { id, validateEmailToken: validEmailToken } = userToUpdate;
 
-      if (validateEmailToken !== userToUpdate.validateEmailToken) {
+      if (validateEmailToken !== validEmailToken) {
         return res.status(401).send({
           ERROR: true,
-          MESSAGE: "INVALID TOKEN",
+          MESSAGE: "INVALID VALIDATE EMAIL TOKEN",
         });
       }
+
       let transactionId;
+
       try {
         const tx = await replaceMultiSigOwner({
           id,
@@ -248,6 +288,7 @@ export const main: Controller = ({ prisma }) => {
             MESSAGE: "NOT NEW PASSWORD",
           });
         }
+
         throw e;
       }
 
@@ -284,7 +325,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/update", validateSchema(updateSchema), async (req, res) => {
-    if (!(req as any).user)
+    if (!(req as any).user || !(req as any).admin)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
@@ -338,7 +379,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/remove", validateSchema(removeAndFetchSchema), async (req, res) => {
-    if (!(req as any).user)
+    if (!(req as any).user || !(req as any).admin)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
@@ -387,8 +428,93 @@ export const main: Controller = ({ prisma }) => {
     }
   });
 
+  r.post(
+    "/migrate/batch",
+    validateSchema(migrateBatchSchema),
+    async (req, res) => {
+      if (!(req as any).admin)
+        return res.status(403).send({
+          ERROR: true,
+          MESSAGE: "NOT AUTHENTICATED: ADMIN PRIVILEGES REQUIRED",
+        });
+
+      const { data } = req.body;
+
+      if (!data || !Array.isArray(data))
+        return res.status(401).send({
+          ERROR: true,
+          MESSAGE: "BAD REQUEST: PARAM 'DATA' MUST BE OF TYPE ARRAY",
+        });
+
+      try {
+        const { results } = await PromisePool.for(data)
+          .withConcurrency(20)
+          .process((i) => batchUpdateUsersWallet(i as BatchUpdateObj, prisma));
+
+        if (results.length !== data.length) {
+          return res.status(401).send({
+            ERROR: true,
+            MESSAGE: "INTERNAL SERVER ERROR: ERROR BATCH UPDATING USERS",
+          });
+        }
+
+        return res.status(200).send({ results });
+      } catch (e) {
+        log.debug("Error batch updating users: ");
+        log.error(e);
+
+        return res.status(500).send({
+          ERROR: true,
+          MESSAGE: "INTERNAL SERVER ERROR: " + e,
+        });
+      }
+    },
+  );
+
   return {
     path: "/api",
     router: r,
   };
+};
+
+async function batchUpdateUsersWallet(
+  data: BatchUpdateObj,
+  prisma: PrismaClient,
+): Promise<User[] | null> {
+  let results;
+
+  const schema = yup
+    .object()
+    .shape({
+      userId: yup.string().required(),
+      clientAddress: yup.string().required(),
+      multiSigAddress: yup.string().required(),
+    })
+    .required();
+
+  try {
+    await schema.validate(data);
+
+    const { multiSigAddress, clientAddress } = data;
+
+    results = await prisma.user.update({
+      where: { userId: data.userId },
+      data: {
+        multiSigAddress,
+        clientAddress: clientAddress ?? undefined,
+      },
+    });
+  } catch (e) {
+    results = null;
+    log.debug("Error batch updating users: ");
+    log.error(e.message);
+  }
+
+  return results;
+}
+
+type BatchUpdateObj = {
+  userId: string;
+  multiSigAddress: string;
+  clientAddress?: string;
 };

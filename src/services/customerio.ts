@@ -7,41 +7,46 @@ import { generateShortLink } from "./link";
 
 const customerio = new APIClient(config.CUSTOMERIO_APP_API_KEY);
 
-export async function sendTxEmail(payload: {
-  to: string;
-  otp: string;
-  id: string;
-}): Promise<boolean> {
+export async function sendCustomerioResetEmail(payload: {
+  recipient: string;
+  oneTimePass: string;
+  recipientId: string;
+  redirectUrl: string;
+}): Promise<{ sent: boolean }> {
   try {
-    const { to, otp, id } = payload;
+    const { recipient, oneTimePass, recipientId, redirectUrl } = payload;
 
-    const urlParamsToMap = { otp: otp, email: to, origin: "guardian" };
+    const urlParamsToMap = {
+      otp: oneTimePass,
+      email: recipient,
+      origin: "guardian",
+    };
     const params = Object.entries(urlParamsToMap)
       .map((kv): string => kv.map(<any>encodeURIComponent).join("="))
       .join("&");
 
-    const urlPath = config.CLIENT_URL + params;
+    const path = redirectUrl.endsWith("/") ? "recover?" : "/recover?";
+    const urlPath = redirectUrl + path + params;
 
-    const link = await generateShortLink(urlPath);
-
-    if (!link) throw new Error();
+    let link = await generateShortLink(urlPath);
 
     const request = new SendEmailRequest({
-      to: payload.to,
-      transactional_message_id: "13",
+      to: recipient,
+      transactional_message_id: isProd() ? "11" : "13",
       message_data: { otp: link },
       identifiers: {
-        id: id,
+        id: recipientId,
       },
     });
 
     await customerio.sendEmail(request);
 
-    return true;
+    console.log("customerio.ts -- reached:");
+    return { sent: true };
   } catch (e) {
     Sentry.captureException(e);
     log.info("Error sending CIO transactional email: ", e.message);
     log.error(e);
-    return false;
+    return { sent: false };
   }
 }

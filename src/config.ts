@@ -10,7 +10,6 @@ export function fetchConfig() {
     NODE_ENV: process.env.NODE_ENV!,
     PORT: parseInt(process.env.PORT!) || 4000,
     POSTGRES: process.env.POSTGRES!,
-    JWT_SECRET: process.env.JWT_SECRET!,
     TOTP_SECRET: process.env.TOTP_SECRET!,
     GUARDIAN_WALLET_PK: process.env.GUARDIAN_PK!,
     BLOCKCHAIN_NETWORK: process.env.BLOCKCHAIN_NETWORK!,
@@ -18,8 +17,8 @@ export function fetchConfig() {
     CUSTOMERIO_SITE_ID: process.env.CUSTOMERIO_SITE_ID!,
     CUSTOMERIO_API_KEY: process.env.CUSTOMERIO_API_KEY!,
     CUSTOMERIO_APP_API_KEY: process.env.CUSTOMERIO_APP_API_KEY!,
-    JWT: process.env.JWT!,
-    CLIENT_URL: process.env.CLIENT_URL!,
+    JWT_PUBLIC: process.env.JWT!,
+    ADMIN_SECRET: process.env.ADMIN_SECRET!,
   };
 }
 

@@ -30,7 +30,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.get("/user", validateSchema(removeAndFetchSchema), async (req, res) => {
-    if (!(req as any).user || !(req as any).admin)
+    if (!(req as any).user)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
@@ -75,7 +75,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/register", validateSchema(registerSchema), async (req, res) => {
-    if (!(req as any).user || !(req as any).admin)
+    if (!(req as any).user)
       return res
         .status(403)
         .send({ ERROR: true, MESSAGE: "NOT AUTHENTICATED" });
@@ -164,10 +164,11 @@ export const main: Controller = ({ prisma }) => {
   r.post("/reset", validateSchema(resetSchema), async (req, res) => {
     const { email, redirectUrl } = req.body;
 
-    if (!email) {
+    if (!email || !redirectUrl) {
       return res.status(401).send({
         ERROR: true,
-        MESSAGE: "INTERNAL SERVER ERROR: EMAIL PARAM REQUIRED",
+        MESSAGE:
+          "INTERNAL SERVER ERROR: BOTH PARAMS 'EMAIL' & 'REDIRECTURL' REQUIRED",
       });
     }
 
@@ -202,8 +203,6 @@ export const main: Controller = ({ prisma }) => {
 
         const sent = await sendCustomerioResetEmail(payload);
 
-        console.log("main.controller.ts -- sent:", sent);
-
         if (!sent)
           return res.status(500).send({
             ERROR: true,
@@ -221,7 +220,6 @@ export const main: Controller = ({ prisma }) => {
         };
 
         const sent = await sendCustomerioResetEmail(payload);
-        console.log("main.controller.ts -- sent:", sent);
 
         if (!sent)
           return res.status(500).send({
@@ -495,10 +493,10 @@ async function batchUpdateUsersWallet(
   try {
     await schema.validate(data);
 
-    const { multiSigAddress, clientAddress } = data;
+    const { multiSigAddress, clientAddress, userId } = data;
 
     results = await prisma.user.update({
-      where: { userId: data.userId },
+      where: { userId },
       data: {
         multiSigAddress,
         clientAddress: clientAddress ?? undefined,

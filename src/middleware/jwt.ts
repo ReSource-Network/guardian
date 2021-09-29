@@ -24,7 +24,7 @@ export async function verify({ token }): Promise<Decoded | null> {
       return (decoded = { id: <string>id, admin: <string>secret, exp });
 
     decoded = { exp, id: <string>id };
-  } catch (e) {
+  } catch (e: any) {
     decoded = null;
 
     log.debug("Error verifying jwt: ");

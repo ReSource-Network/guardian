@@ -55,7 +55,7 @@ export const validate = (schema) => async (req, res, next) => {
   try {
     await schema.validate(body);
     next();
-  } catch (e) {
+  } catch (e: any) {
     log.debug("Error validating request body schema:");
     log.error(e.message);
 

@@ -1,26 +1,26 @@
-import { User, PrismaClient, Prisma } from "@prisma/client";
-import { Router } from "express";
-import { retry, retryAsyncUntilTruthy } from "ts-retry";
+import { PrismaClient, User } from "@prisma/client";
 import PromisePool from "@supercharge/promise-pool";
+import { Router } from "express";
+import { retryAsyncUntilTruthy } from "ts-retry";
+import * as yup from "yup";
 
 import {
-  generate,
-  log,
-  replaceMultiSigOwner,
-  getGuardianAddr,
-  sendCustomerioResetEmail,
-} from "../services";
-import {
+  migrateBatchSchema,
   recoverSchema,
   registerSchema,
-  resetSchema,
   removeAndFetchSchema,
-  migrateBatchSchema,
+  resetSchema,
   updateSchema,
+  validate as validateSchema,
 } from "../middleware/schema";
+import {
+  generate,
+  getGuardianAddr,
+  log,
+  replaceMultiSigOwner,
+  sendCustomerioResetEmail,
+} from "../services";
 import { Controller } from "./types";
-import * as yup from "yup";
-import { validate as validateSchema } from "../middleware/schema";
 
 export const main: Controller = ({ prisma }) => {
   const r = Router();
@@ -63,7 +63,7 @@ export const main: Controller = ({ prisma }) => {
       }
 
       return res.status(200).json({ user });
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error updating user:");
       log.error(e);
 
@@ -136,7 +136,7 @@ export const main: Controller = ({ prisma }) => {
               }),
             { delay: 100, maxTry: 3 },
           );
-        } catch (e) {
+        } catch (e: any) {
           return res.status(500).send({
             ERROR: true,
             MESSAGE: "INTERNAL SERVER ERROR: COULD NOT CREATE USER",
@@ -150,7 +150,7 @@ export const main: Controller = ({ prisma }) => {
         user,
         guardian,
       });
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error registering user:");
       log.error(e);
 
@@ -232,7 +232,7 @@ export const main: Controller = ({ prisma }) => {
 
         return res.status(200).send({ sent: true });
       }
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error sending TOTP password:");
       log.error(e);
 
@@ -281,7 +281,7 @@ export const main: Controller = ({ prisma }) => {
         });
 
         transactionId = tx.transactionId;
-      } catch (e) {
+      } catch (e: any) {
         if (e.message === "OWNERS CONTAINS NEW ADDRESS") {
           return res.status(200).json({
             ERROR: true,
@@ -313,7 +313,7 @@ export const main: Controller = ({ prisma }) => {
       }
 
       return res.status(200).json({ user: userToUpdate, tx: transactionId });
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error verifying TOTP or replacing multisig owner:");
       log.error(e);
 
@@ -367,7 +367,7 @@ export const main: Controller = ({ prisma }) => {
       if (user) return res.status(200).json({ user });
 
       return res.status(400).send({ updated: false });
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error updating user:");
       log.error(e);
 
@@ -417,7 +417,7 @@ export const main: Controller = ({ prisma }) => {
         });
 
       return res.status(200).send({ deleted: true });
-    } catch (e) {
+    } catch (e: any) {
       log.debug("Error removing user:");
       log.error(e);
 
@@ -459,7 +459,7 @@ export const main: Controller = ({ prisma }) => {
         }
 
         return res.status(200).send({ results });
-      } catch (e) {
+      } catch (e: any) {
         log.debug("Error batch updating users: ");
         log.error(e);
 
@@ -504,7 +504,7 @@ async function batchUpdateUsersWallet(
         clientAddress: clientAddress ?? undefined,
       },
     });
-  } catch (e) {
+  } catch (e: any) {
     results = null;
     log.debug("Error batch updating users: ");
     log.error(e.message);

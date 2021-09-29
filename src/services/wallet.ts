@@ -157,7 +157,7 @@ export async function replaceMultiSigOwner({
     });
 
     txId = transactionId;
-  } catch (e) {
+  } catch (e: any) {
     log.error("Error replacing client: " + e, {
       id,
       newClientAddress,
@@ -187,7 +187,7 @@ async function tryWithGas(
       await result.wait();
       confirmed = true;
       return result;
-    } catch (e) {
+    } catch (e: any) {
       if (
         tries >= 5 ||
         (e.code !== "CALL_EXCEPTION" && e.code !== "UNPREDICTABLE_GAS_LIMIT")

@@ -43,7 +43,7 @@ export async function sendCustomerioResetEmail(payload: {
 
     console.log("customerio.ts -- reached:");
     return { sent: true };
-  } catch (e) {
+  } catch (e: any) {
     Sentry.captureException(e);
     log.info("Error sending CIO transactional email: ", e.message);
     log.error(e);

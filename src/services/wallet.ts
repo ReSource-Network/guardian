@@ -1,4 +1,4 @@
-import { CeloProvider } from "@celo-tools/celo-ethers-wrapper";
+import { CeloProvider, CeloWallet } from "@celo-tools/celo-ethers-wrapper";
 import { PrismaClient } from "@prisma/client";
 import { BigNumber, ContractFunction, ethers, providers } from "ethers";
 import { retry } from "ts-retry";
@@ -24,6 +24,9 @@ export const getProvider = async (): Promise<providers.JsonRpcProvider> => {
 export const getGuardianWallet = async () => {
   const provider = await getProvider();
   const pk = config.GUARDIAN_WALLET_PK;
+  if (provider.connection.url.includes("celo")) {
+    return new CeloWallet(pk, provider);
+  }
   return new ethers.Wallet(pk, provider);
 };
 

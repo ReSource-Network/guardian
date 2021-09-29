@@ -1,13 +1,14 @@
+import { CeloProvider } from "@celo-tools/celo-ethers-wrapper";
 import { PrismaClient } from "@prisma/client";
-import { ethers, providers } from "ethers";
-import { CeloProvider, CeloWallet } from "@celo-tools/celo-ethers-wrapper";
-import config from "../config";
-import { log } from "./logger";
-import { tryWithGas } from "./utils";
+import { BigNumber, ContractFunction, ethers, providers } from "ethers";
 import { retry } from "ts-retry";
+
+import config from "../config";
 import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
 import { IKeyMultiSig } from "../types/IKeyMultiSig";
+import { log } from "./logger";
 
+// helpers
 export const getProvider = async (): Promise<providers.JsonRpcProvider> => {
   const network = config.BLOCKCHAIN_NETWORK;
   let provider;
@@ -26,6 +27,10 @@ export const getGuardianWallet = async () => {
   return new ethers.Wallet(pk, provider);
 };
 
+export async function getGuardianAddr() {
+  return (await getGuardianWallet()).address;
+}
+
 export async function replaceMultiSigOwner({
   id,
   newClientAddress,
@@ -36,29 +41,37 @@ export async function replaceMultiSigOwner({
   prisma: PrismaClient;
 }) {
   let txId: string | null;
+
+  // fetchuser with id
+  const user = await prisma.user.findUnique({ where: { id } });
+
+  // MultiSigWallet
+  if (!user) throw new Error("User does not exist");
+
   try {
     // instantiate Guardian Wallet
     const guardianWallet = await getGuardianWallet();
 
-    // fetchuser with id
-    const user = await prisma.user.findUnique({ where: { id } });
-
-    // MultiSigWallet
-    if (!user) throw new Error("User does not exist");
-
-    const { multiSigAddress, userId, clientAddress } = user;
+    const { multiSigAddress, userId } = user;
 
     if (!multiSigAddress)
       throw new Error("MultiSigAddress fields do not exist on user");
 
-    if (!clientAddress)
-      throw new Error("clientAddress does not exist on multiSig");
-
+    // get all owners
+    // find which owner is client
     const multiSigWallet = new ethers.Contract(
       multiSigAddress,
       IKeyMultiSig__factory.createInterface(),
       guardianWallet,
     ) as IKeyMultiSig;
+
+    const owners = await multiSigWallet.getOwners();
+    const clientAddress = owners.find(
+      async (owner) => await multiSigWallet.clients(owner),
+    );
+
+    if (!clientAddress)
+      throw new Error("Client address does not exist on multiSig");
 
     if (await multiSigWallet.clients(newClientAddress)) {
       log.info("Error replacing multisig owner: " + user.email, {
@@ -131,7 +144,11 @@ export async function replaceMultiSigOwner({
       "wei",
     );
 
-    if (!transactionId) throw new Error("Unable to submit transaction");
+    if (!transactionId)
+      throw new Error(
+        "Unable to submit transaction: " +
+          JSON.stringify({ txResponseEvents: submitTxResponse.events }),
+      );
 
     // update new clientAddress on user
     await prisma.user.update({
@@ -141,10 +158,12 @@ export async function replaceMultiSigOwner({
 
     txId = transactionId;
   } catch (e) {
-    log.error("Error replacing owner: " + e, {
+    log.error("Error replacing client: " + e, {
       id,
       newClientAddress,
+      oldClientAddress: user.clientAddress,
     });
+
     txId = null;
     throw e;
   }
@@ -152,6 +171,28 @@ export async function replaceMultiSigOwner({
   return { transactionId: txId };
 }
 
-export async function getGuardianAddr() {
-  return (await getGuardianWallet()).address;
+async function tryWithGas(
+  func: ContractFunction,
+  args: Array<any>,
+  gas: BigNumber,
+) {
+  let tries = 0;
+  let confirmed = false;
+  while (!confirmed) {
+    tries += 1;
+    gas = gas.shl(1);
+    let options = { gasLimit: gas };
+    try {
+      const result = await func(...args, options);
+      await result.wait();
+      confirmed = true;
+      return result;
+    } catch (e) {
+      if (
+        tries >= 5 ||
+        (e.code !== "CALL_EXCEPTION" && e.code !== "UNPREDICTABLE_GAS_LIMIT")
+      )
+        throw e;
+    }
+  }
 }

@@ -6,7 +6,7 @@ import { log } from "../services/logger";
 
 export async function verify({ token }): Promise<Decoded | null> {
   const key = createPublicKey({
-    key: Buffer.from(config.JWT, "base64"),
+    key: Buffer.from(config.JWT_PUBLIC, "base64"),
     format: "der",
     type: "spki",
   });

@@ -1,6 +1,6 @@
 import { User, PrismaClient, Prisma } from "@prisma/client";
 import { Router } from "express";
-import { retryAsyncUntilTruthy } from "ts-retry";
+import { retry, retryAsyncUntilTruthy } from "ts-retry";
 import PromisePool from "@supercharge/promise-pool";
 
 import {
@@ -162,7 +162,7 @@ export const main: Controller = ({ prisma }) => {
   });
 
   r.post("/reset", validateSchema(resetSchema), async (req, res) => {
-    const { email } = req.body;
+    const { email, redirectUrl } = req.body;
 
     if (!email) {
       return res.status(401).send({
@@ -197,9 +197,13 @@ export const main: Controller = ({ prisma }) => {
           oneTimePass: validateEmailToken,
           recipient: user.email,
           recipientId: user.userId,
+          redirectUrl: redirectUrl,
         };
 
-        const sent = await sendResetPasswordEmail(payload);
+        const sent = await sendCustomerioResetEmail(payload);
+
+        console.log("main.controller.ts -- sent:", sent);
+
         if (!sent)
           return res.status(500).send({
             ERROR: true,
@@ -213,15 +217,20 @@ export const main: Controller = ({ prisma }) => {
           oneTimePass: user.validateEmailToken,
           recipient: user.email,
           recipientId: user.userId,
+          redirectUrl: redirectUrl,
         };
 
-        const sent = await sendResetPasswordEmail(payload);
+        const sent = await sendCustomerioResetEmail(payload);
+        console.log("main.controller.ts -- sent:", sent);
+
         if (!sent)
           return res.status(500).send({
             ERROR: true,
             MESSAGE:
               "INTERNAL SERVER ERROR: FAILED TO SEND RESET PASSWORD EMAIL",
           });
+
+        return res.status(200).send({ sent: true });
       }
     } catch (e) {
       log.debug("Error sending TOTP password:");
@@ -255,13 +264,15 @@ export const main: Controller = ({ prisma }) => {
 
       const { id, validateEmailToken: validEmailToken } = userToUpdate;
 
-      if (validateEmailToken !== userToUpdate.validateEmailToken) {
+      if (validateEmailToken !== validEmailToken) {
         return res.status(401).send({
           ERROR: true,
           MESSAGE: "INVALID VALIDATE EMAIL TOKEN",
         });
       }
+
       let transactionId;
+
       try {
         const tx = await replaceMultiSigOwner({
           id,
@@ -277,6 +288,7 @@ export const main: Controller = ({ prisma }) => {
             MESSAGE: "NOT NEW PASSWORD",
           });
         }
+
         throw e;
       }
 
@@ -464,33 +476,6 @@ export const main: Controller = ({ prisma }) => {
     router: r,
   };
 };
-
-async function sendResetPasswordEmail(payload: {
-  recipient: string;
-  oneTimePass: string;
-  recipientId: string;
-}) {
-  let sent = true;
-  const resp: boolean = await sendCustomerioResetEmail(payload);
-
-  if (!resp) {
-    try {
-      await retryAsyncUntilTruthy(
-        async () => {
-          return await sendCustomerioResetEmail(payload as any);
-        },
-        { delay: 100, maxTry: 2 },
-      );
-      sent = true;
-    } catch (e) {
-      sent = false;
-      log.debug("Error sending reset password email: ");
-      log.error(e);
-    }
-
-    return sent;
-  }
-}
 
 async function batchUpdateUsersWallet(
   data: BatchUpdateObj,

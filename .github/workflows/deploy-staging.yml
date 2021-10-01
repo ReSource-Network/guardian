@@ -15,10 +15,21 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Cache Node Modules
+        id: yarn-cache
+        uses: actions/cache@v2
+        with:
+          path: "./node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('./yarn.lock') }}
+
       - name: Install Packages
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: SKIP_POSTINSTALL=1 yarn
+
       - name: Build app
         run: CI=false yarn build
+        
       - name: Build and publish docker image
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

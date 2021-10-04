@@ -23,7 +23,7 @@ export async function generateShortLink(path: string) {
 
     if (link) return link;
     return path;
-  } catch (e) {
+  } catch (e: any) {
     Sentry.captureException(e);
     log.debug("Error generating shortlink: " + e.message);
     log.error(e);

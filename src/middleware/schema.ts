@@ -6,8 +6,8 @@ export const registerSchema = yup
   .shape({
     email: yup.string().required().email(),
     userId: yup.string().required(),
-    multiSigAddress: yup.string(),
-    clientAddress: yup.string(),
+    multiSigAddress: yup.string().required(),
+    clientAddress: yup.string().required(),
   })
   .required();
 
@@ -42,13 +42,20 @@ export const updateSchema = yup
   })
   .required();
 
+export const migrateBatchSchema = yup
+  .object()
+  .shape({
+    data: yup.array().required(),
+  })
+  .required();
+
 export const validate = (schema) => async (req, res, next) => {
   const body = req.body;
 
   try {
     await schema.validate(body);
     next();
-  } catch (e) {
+  } catch (e: any) {
     log.debug("Error validating request body schema:");
     log.error(e.message);
 

@@ -35,7 +35,7 @@ export const start = () =>
       {
         prisma,
       },
-      controller
+      controller,
     ),
     port: isProd() ? 80 : config.PORT,
   }).catch((e) => {

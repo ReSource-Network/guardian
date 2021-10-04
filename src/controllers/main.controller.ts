@@ -481,6 +481,8 @@ async function batchUpdateUsersWallet(
 ): Promise<User[] | null> {
   let results;
 
+  const { multiSigAddress, clientAddress, userId } = data;
+
   const schema = yup
     .object()
     .shape({
@@ -493,8 +495,6 @@ async function batchUpdateUsersWallet(
   try {
     await schema.validate(data);
 
-    const { multiSigAddress, clientAddress, userId } = data;
-
     results = await prisma.user.update({
       where: { userId },
       data: {
@@ -504,7 +504,7 @@ async function batchUpdateUsersWallet(
     });
   } catch (e: any) {
     results = null;
-    log.debug("Error batch updating users: ");
+    log.debug("Error batch updating user with userId: " + userId);
     log.error(e.message);
   }
 

@@ -8,6 +8,8 @@
     "seed": "prisma db seed --preview-feature",
     "start": "node dist/index.js",
     "start:watch": "nodemon dist/index.js",
+    "start:dev": "yarn fetch-env development && yarn start:watch",
+    "fetch-env": "bin/fetchEnv.sh guardian",
     "build": "tsc",
     "build:watch": "tsc -w",
     "prebuild": "yarn run clean && yarn run generate",

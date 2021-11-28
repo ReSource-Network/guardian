@@ -4,21 +4,16 @@ services:
   db:
     container_name: guardian-db
     image: postgres
-    ports:
-      - "127.0.0.1:5432:5432"
-    environment:
-      - "POSTGRES_PASSWORD=resource"
-      - "POSTGRES_USER=resource"
+    network_mode: "host"
     volumes:
       - pg_data:/var/lib/postgresql/data
 
   api:
     container_name: guardian-api
-    image: 446481105531.dkr.ecr.us-east-2.amazonaws.com/development-guardian:latest
+    image: ${DOCKER_IMAGE_URL}
+    network_mode: "host"
     restart: always
     env_file: .env
-    ports:
-      - 80:4000
 
 volumes:
   pg_data:

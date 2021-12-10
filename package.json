@@ -10,7 +10,7 @@
     "start:watch": "nodemon dist/index.js",
     "start:dev": "yarn fetch-env development && yarn start:watch",
     "compose:dev": "docker-compose up",
-    "compose:local": "env-cmd -f .env.local docker-compose -f docker-compose.yml -f docker-compose.local.yml up",
+    "compose:local": "docker-compose -f docker-compose.yml -f docker-compose.local.yml up",
     "fetch-env": "bin/fetchEnv.sh guardian",
     "build": "tsc",
     "build:watch": "tsc -w",

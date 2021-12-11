@@ -12,6 +12,7 @@
     "compose:dev": "docker-compose up",
     "compose:local": "docker-compose -f docker-compose.yml -f docker-compose.local.yml up",
     "fetch-env": "bin/fetchEnv.sh guardian",
+    "fetch-build-env": "bin/fetchBuildEnv.sh guardian",
     "build": "tsc",
     "build:watch": "tsc -w",
     "prebuild": "yarn run clean && yarn run generate",

@@ -13,12 +13,10 @@ import { isProd } from "./config";
 Sentry.init({
   dsn: config.SENTRY_DSN,
   tracesSampleRate: 1.0,
-  environment: config.NODE_ENV,
+  environment: config.APP_ENV,
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
-    new RewriteFrames({
-      root: process.cwd(),
-    }) as any,
+    new RewriteFrames({ root: process.cwd() }) as any,
   ],
 });
 

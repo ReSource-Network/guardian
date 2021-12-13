@@ -8,6 +8,7 @@ export function isProd() {
 export function fetchConfig() {
   return {
     NODE_ENV: process.env.NODE_ENV!,
+    APP_ENV: process.env.APP_ENV!,
     PORT: parseInt(process.env.PORT!) || 4000,
     POSTGRES: process.env.POSTGRES!,
     TOTP_SECRET: process.env.TOTP_SECRET!,

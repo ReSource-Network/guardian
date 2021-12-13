@@ -1,8 +1,9 @@
-name: Deploy - Development
+name: Deploy - Guardian
 on:
   push:
     branches:
       - main
+      - staging
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,13 +23,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-2
-          branch: ${{ github.ref }}
+          BRANCH: ${{ github.ref }}
         run: |
-          [ $branch == 'refs/heads/main' ] && BUILD_ENV=development
-          [ $branch == 'refs/heads/staging' ] && BUILD_ENV=staging
-          [ $branch == 'refs/heads/production' ] && BUILD_ENV=production
+          [ $BRANCH == 'refs/heads/main' ] && BUILD_ENV=development
+          [ $BRANCH == 'refs/heads/staging' ] && BUILD_ENV=staging
+          [ $BRANCH == 'refs/heads/production' ] && BUILD_ENV=production
 
-          yarn fetch-build-env $BUILD_ENV
+          yarn fetch-env $BUILD_ENV -b -o .build.env
           while read env_var; do
           echo "$env_var" >> $GITHUB_ENV
           done <.build.env

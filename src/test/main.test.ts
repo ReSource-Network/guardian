@@ -2,12 +2,12 @@ import { PrismaClient } from "@prisma/client";
 import { ethers } from "ethers";
 import { customAlphabet } from "nanoid";
 import request from "supertest";
+import { IKeyMultiSig } from "../../types/IKeyMultiSig";
 
 import { main as controller } from "../controllers/main.controller";
 import { createServer } from "../server";
 import { getGuardianWallet } from "../services/wallet";
-import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
-import { IKeyMultiSig } from "../types/IKeyMultiSig";
+import { IKeyMultiSig__factory } from "../../types/factories/IKeyMultiSig__factory";
 
 const prisma = new PrismaClient();
 const nanoid = customAlphabet("1234567890abcdef", 10);
@@ -33,17 +33,12 @@ describe("Guardian Test Suite", function () {
     guardian = await getGuardianWallet();
     addresses = [guardian.address, oldClient];
 
-    const walletFactory = new IKeyMultiSig__factory(guardian);
     const deployResult = await (
-      await walletFactory.deploy()
+      await new IKeyMultiSig__factory(guardian).deploy()
     ).deployTransaction.wait();
 
     const multiSigAddress = deployResult.contractAddress;
-    multiSig = new ethers.Contract(
-      multiSigAddress,
-      IKeyMultiSig__factory.createInterface(),
-      guardian,
-    ) as IKeyMultiSig;
+    multiSig = IKeyMultiSig__factory.connect(multiSigAddress, guardian);
 
     await (
       await multiSig.initialize(

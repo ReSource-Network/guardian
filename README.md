@@ -1,22 +1,68 @@
 # Express Typescript Prisma Server Starter
 
-## Quickstart:
+#### Local Setup
 
-Make sure that you have the AWS cli installed on your machine and that your AWS
-profile is correctly configured with your access key and secret; in a terminal run:
+1. Download and configure AWS.
 
-```bash
+```
 aws configure
 ```
 
-In one terminal run:
+2. Install dependencies:
 
-```bash
-yarn build:watch
+```
+yarn
 ```
 
-In another terminal run:
+3. Fetch local environment variables
 
-```bash
-yarn start:dev
+```
+yarn fetch-env local
+```
+
+4. Download and configure PostgreSQL
+
+- install postgresql
+
+```
+brew install postgresql
+```
+
+- open postgres cli
+
+```
+psql postgres
+```
+
+- create postgres user
+
+```
+CREATE USER root SUPERUSER;
+```
+
+- create dev db
+
+```
+CREATE DATABASE guardian;
+```
+
+#### Standing up the api
+
+1.  Generate Nexus & Prisma types:
+
+```
+yarn run generate
+```
+
+2. Set up local postgres database: migrate types and generate schema:
+
+```
+yarn run db:push
+```
+
+3. Start development server (in 2 separate terminals)
+
+```
+yarn run build:watch
+yarn run start:dev       ### or yarn run start:dev:local after setting up variables in .env.local
 ```

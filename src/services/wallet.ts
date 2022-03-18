@@ -4,9 +4,9 @@ import { BigNumber, ContractFunction, ethers, providers } from "ethers";
 import { retry } from "ts-retry";
 
 import config from "../config";
-import { IKeyMultiSig__factory } from "../types/factories/IKeyMultiSig__factory";
-import { IKeyMultiSig } from "../types/IKeyMultiSig";
+
 import { log } from "./logger";
+import { IKeyMultiSig__factory } from "../../types/factories/IKeyMultiSig__factory";
 
 // helpers
 export const getProvider = async (): Promise<providers.JsonRpcProvider> => {
@@ -62,11 +62,10 @@ export async function replaceMultiSigOwner({
 
     // get all owners
     // find which owner is client
-    const multiSigWallet = new ethers.Contract(
+    const multiSigWallet = IKeyMultiSig__factory.connect(
       multiSigAddress,
-      IKeyMultiSig__factory.createInterface(),
       guardianWallet,
-    ) as IKeyMultiSig;
+    );
 
     const owners = await multiSigWallet.getOwners();
     const clientAddress = owners.find(

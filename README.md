@@ -9,6 +9,12 @@ profile is correctly configured with your access key and secret; in a terminal r
 aws configure
 ```
 
+Fetch local env variables
+
+```bash
+yarn fetch-env local
+```
+
 In one terminal run:
 
 ```bash
@@ -18,5 +24,5 @@ yarn build:watch
 In another terminal run:
 
 ```bash
-yarn start:dev
+yarn start:watch
 ```

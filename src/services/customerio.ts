@@ -32,7 +32,7 @@ export async function sendCustomerioResetEmail(payload: {
 
     const request = new SendEmailRequest({
       to: recipient,
-      transactional_message_id: isProd() ? "11" : "13",
+      transactional_message_id: isProd ? "11" : "13",
       message_data: { otp: link },
       identifiers: {
         id: recipientId,

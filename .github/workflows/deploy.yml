@@ -1,0 +1,107 @@
+name: Deploy
+on:
+  workflow_call:
+    inputs:
+      DOCKER_IMAGE:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: true
+        type: string
+      HOST:
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      SENTRY_AUTH_TOKEN:
+        required: true
+      DEPLOY_SSH_KEY:
+        required: true
+
+env:
+  ECR_URI: 446481105531.dkr.ecr.us-east-2.amazonaws.com
+  EC2_USER: ubuntu
+  REGION: us-east-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [15.x]
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Fetch and inject build variables
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${REGION}
+          BRANCH: ${{ github.ref }}
+        run: |
+          yarn fetch-env ${{ inputs.ENVIRONMENT }} -b -o .build.env
+          while read env_var; do
+          echo "$env_var" >> $GITHUB_ENV
+          done <.build.env
+
+      - name: Cache Node Modules
+        id: yarn-cache
+        uses: actions/cache@v2
+        with:
+          path: "./node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('./yarn.lock') }}
+
+      - name: Install Packages
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: SKIP_POSTINSTALL=1 yarn
+
+      - name: Build app
+        run: CI=false yarn build
+
+      - name: Build and publish docker image
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin $ECR_URI
+          docker build -t ${{ inputs.DOCKER_IMAGE }}:latest .
+          docker tag ${{ DOCKER_IMAGE }}:latest $ECR_URI/${{ inputs.DOCKER_IMAGE }}:latest
+          docker push $ECR_URI/${{ inputs.DOCKER_IMAGE }}:latest
+
+      - name: Setup SSH Key
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.DEPLOY_SSH_KEY }}"
+
+      - name: Copy config to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ inputs.HOST }}
+          username: ${EC2_USER}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: ".env,docker-compose.yml"
+          target: "."
+
+      - name: Deploy to server
+        # env:
+        #   key: ${{ secrets.DEPLOY_SSH_KEY }}
+        #   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh -o StrictHostKeyChecking=no $EC2_USER@${{ inputs.HOST }} << EOF
+            aws ecr get-login-password | sudo docker login --username AWS --password-stdin ${ECR_URI}
+            sudo docker pull "${ECR_URI}/${{ inputs.DOCKER_IMAGE }}:latest"
+            sudo docker ps -f name=${{ inputs.DOCKER_IMAGE }} -q | xargs --no-run-if-empty sudo docker rm -f
+            sudo docker-compose -f docker-compose.yml up -d
+            sudo docker exec guardian-api yarn db:migrate:prod
+            sudo docker system prune -f
+          EOF

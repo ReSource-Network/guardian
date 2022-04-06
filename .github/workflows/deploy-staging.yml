@@ -1,8 +1,7 @@
-name: Deploy - Guardian
+name: Deploy - Staging
 on:
   push:
     branches:
-      - main
       - staging
 jobs:
   deploy:
@@ -71,7 +70,7 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           host: ${{ env.EC2_IP }}
-          username: ${{ env.EC2_USER }}
+          username: ubuntu
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: ".env,docker-compose.yml"
           target: "."
@@ -81,7 +80,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_IP << EOF
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ inputs.HOST }} << EOF
             aws ecr get-login-password | sudo docker login --username AWS --password-stdin $ECR_URI
             sudo docker pull "$ECR_URI/$DOCKER_IMAGE:latest"
             sudo docker ps -f name=$DOCKER_IMAGE -q | xargs --no-run-if-empty sudo docker rm -f

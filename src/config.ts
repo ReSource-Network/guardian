@@ -1,14 +1,14 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export function isProd() {
-  return process.env.NODE_ENV === "production";
-}
+export const isProd = process.env.APP_ENV === "production";
+export const isLocal = process.env.APP_ENV === "local";
 
 export function fetchConfig() {
   return {
     NODE_ENV: process.env.NODE_ENV!,
     APP_ENV: process.env.APP_ENV!,
+    COMMIT_SHA: process.env.COMMIT_SHA!,
     PORT: parseInt(process.env.PORT!) || 4000,
     POSTGRES: process.env.POSTGRES!,
     TOTP_SECRET: process.env.TOTP_SECRET!,

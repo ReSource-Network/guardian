@@ -18,7 +18,6 @@ export const start = () =>
     ),
     port: isProd ? 80 : config.PORT,
   }).catch((e) => {
-    // transaction.finish();
     log.info("Internal Server Error: ", e.message);
     log.error(e.stack);
   });

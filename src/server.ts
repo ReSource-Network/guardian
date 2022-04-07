@@ -32,12 +32,8 @@ export const createServer = (
     release: config.COMMIT_SHA,
   });
 
-  Sentry.captureException(new Error('evan test error1'))
-
-  // const transaction = Sentry.startTransaction({
-  //   op: "init",
-  //   name: "Server instantiation",
-  // });
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
 
   app.use(express.json());
   app.use(cors());
@@ -76,6 +72,11 @@ export const createServer = (
     app.use(controller.path, controller.router);
   }
 
+  app.get("/debug-sentry", function mainHandler(req, res) {
+    throw new Error("Evan test error2");
+  });
+
+  app.use(Sentry.Handlers.errorHandler());
   return app;
 };
 

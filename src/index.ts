@@ -1,4 +1,3 @@
-
 import config from "./config";
 import { main as controller } from "./controllers/main.controller";
 import { createServer, startServer } from "./server";

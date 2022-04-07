@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/node";
+import Sentry from "@sentry/node";
 import Tracing from "@sentry/tracing";
 import { RewriteFrames } from "@sentry/integrations";
 import express from "express";

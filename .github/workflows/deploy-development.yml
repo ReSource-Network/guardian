@@ -8,8 +8,6 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       ENVIRONMENT: development
-      DOCKER_IMAGE: development-guardian
-      HOST: 18.222.86.184
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

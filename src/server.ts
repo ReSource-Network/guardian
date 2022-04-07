@@ -32,6 +32,8 @@ export const createServer = (
     release: config.COMMIT_SHA,
   });
 
+  Sentry.captureException(new Error('evan test error1'))
+
   // const transaction = Sentry.startTransaction({
   //   op: "init",
   //   name: "Server instantiation",

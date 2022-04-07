@@ -1,4 +1,4 @@
-import Sentry from "@sentry/node";
+import * as Sentry from "@sentry/node";
 import Tracing from "@sentry/tracing";
 import { RewriteFrames } from "@sentry/integrations";
 import express from "express";
@@ -23,7 +23,7 @@ export const createServer = (
     enabled: !isLocal,
     environment: config.APP_ENV,
     integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
+      // new Sentry.Integrations.Http({ tracing: true }),
       new RewriteFrames({ root: process.cwd() }) as any,
       new Tracing.Integrations.Express({
         app,

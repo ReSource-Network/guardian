@@ -23,7 +23,6 @@ on:
 
 env:
   ECR_URI: 446481105531.dkr.ecr.us-east-2.amazonaws.com
-  EC2_USER: ubuntu
   REGION: us-east-2
 
 jobs:
@@ -86,8 +85,8 @@ jobs:
       - name: Copy config to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ inputs.HOST }}
-          username: ${EC2_USER}
+          host: ${{ env.EC2_IP }}
+          username: ${{ env.EC2_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: ".env,docker-compose.yml"
           target: "."

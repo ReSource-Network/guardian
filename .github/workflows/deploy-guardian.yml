@@ -2,8 +2,7 @@ name: Deploy - Guardian
 on:
   push:
     branches:
-      - main
-      - staging
+      - test
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -25,7 +24,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-2
           BRANCH: ${{ github.ref }}
         run: |
-          [ $BRANCH == 'refs/heads/main' ] && BUILD_ENV=development
+          [ $BRANCH == 'refs/heads/test' ] && BUILD_ENV=development
           [ $BRANCH == 'refs/heads/staging' ] && BUILD_ENV=staging
           [ $BRANCH == 'refs/heads/production' ] && BUILD_ENV=production
 

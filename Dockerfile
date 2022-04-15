@@ -1,15 +1,22 @@
-FROM node:14.16.0-alpine
+FROM node:16-slim AS base
+RUN apt-get -q update && apt-get install libssl-dev ca-certificates -qy
 
 WORKDIR /app
-
-RUN apk add git
-
 COPY package.json yarn.lock ./prisma ./
+RUN yarn install --production
+RUN yarn prisma generate
 
-RUN SKIP_POSTINSTALL=1 yarn install --production --pure-lockfile
+FROM base AS build
+WORKDIR /app
+RUN yarn install 
+COPY . .
+RUN yarn generate
+RUN yarn build
 
-COPY dist/ ./dist
-
+FROM base
+WORKDIR /app
+COPY --from=build /app/dist /app/dist
+COPY --from=build  /app/prisma /app/prisma
 EXPOSE 80
 
-CMD [ "yarn", "start" ]
+CMD ["node", "dist/index.js"]
